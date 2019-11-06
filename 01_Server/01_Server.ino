@@ -21,6 +21,10 @@ word tx_cntr;
 byte retval;
 /****************************************************************************************************/
 
+// 'index', 128x32px
+const unsigned char myBitmap [] PROGMEM = {
+};
+
 void setup() 
 {
   /* Pin 01 - Red light - Low On */
@@ -41,8 +45,7 @@ void setup()
   display.setTextSize(1);
   display.setTextColor(WHITE);
   
-  display.setCursor(0, 0);
-  display.println("Transmitting...");
+  display.drawBitmap(0, 0, myBitmap, 128, 32, WHITE); //Logo display
   display.display();
 
 /****************************************************************************************************/
@@ -103,15 +106,16 @@ void loop()
 
     display.setCursor(90, 20);
     display.println(canMsg.data[7], HEX);
-    
-    display.display();
   }
   else
   {
     display.setCursor(0, 0);
     display.println("No Tx");
-    display.display();
   }
 
+  if(tx_cntr > 0x200)
+  {
+    display.display();
+  }
   delay(50);
 }
