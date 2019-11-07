@@ -59,63 +59,37 @@ void setup()
 void loop() 
 {  
   /****************************************************************************************************/
-  canMsg.can_id  = ++tx_cntr;           
-  canMsg.can_dlc = 8;               
-  canMsg.data[0] = 1;      
-  canMsg.data[1] = 2;   
-  canMsg.data[2] = 0x03;            
-  canMsg.data[3] = 0x04;
-  canMsg.data[4] = 0x05;
-  canMsg.data[5] = 0x06;
-  canMsg.data[6] = 0x07;
-  canMsg.data[7] = 0x08;
+  if (mcp2515.readMessage(&canMsg) == MCP2515::ERROR_OK)
+  {
+    if((canMsg.can_id, HEX) == 0x7E0)
+    {
+      if((canMsg.data[0], HEX) == 0x22)
+      {
+        if(((canMsg.data[1], HEX) == 0xF1) &&
+              ((canMsg.data[2], HEX) == 0x01) && 
+                  ((canMsg.can_dlc, HEX) == 0x3))
+        {
+            canMsg.can_id  = 0x7E0;           
+            canMsg.can_dlc = 0x05;               
+            canMsg.data[0] = 0x22;      
+            canMsg.data[1] = 0xF1;   
+            canMsg.data[2] = 0x12;            
+            canMsg.data[3] = 0x43;
+            canMsg.data[4] = 0x00;
+            canMsg.data[5] = 0x00;
+            canMsg.data[6] = 0x00;
+            canMsg.data[7] = 0x00;
+              
+            retval = mcp2515.sendMessage(&canMsg);
   
-  retval = mcp2515.sendMessage(&canMsg);
-
-  // Clear the buffer
-  display.clearDisplay();
-  
-  if(retval == MCP2515::ERROR_OK)
-  {
-    display.setCursor(0, 0);
-    display.println(canMsg.can_id, HEX);
-
-    display.setCursor(30, 0);
-    display.println(canMsg.can_dlc, HEX);
-
-    display.setCursor(0, 10);
-    display.println(canMsg.data[0], HEX);
-
-    display.setCursor(30, 10);
-    display.println(canMsg.data[1], HEX);
-
-    display.setCursor(60, 10);
-    display.println(canMsg.data[2], HEX);
-
-    display.setCursor(90, 10);
-    display.println(canMsg.data[3], HEX);
-
-    display.setCursor(0, 20);
-    display.println(canMsg.data[4], HEX);
-
-    display.setCursor(30, 20);
-    display.println(canMsg.data[5], HEX);
-
-    display.setCursor(60, 20);
-    display.println(canMsg.data[6], HEX);
-
-    display.setCursor(90, 20);
-    display.println(canMsg.data[7], HEX);
+            if(retval == MCP2515::ERROR_OK)
+            {
+              display.setCursor(0, 0);
+              display.println(canMsg.can_id, HEX); 
+            }
+        }        
+      }
+    }
   }
-  else
-  {
-    display.setCursor(0, 0);
-    display.println("No Tx");
-  }
-
-  if(tx_cntr > 0x200)
-  {
-    display.display();
-  }
-  delay(50);
+  display.display();
 }
