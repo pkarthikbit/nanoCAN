@@ -14,14 +14,14 @@ byte retval;
 
 void RDBI_0xF101(struct can_frame *fill_canMsg)
 {
-  unsigned long tmr_0xF101 = millis()/1000;
+  unsigned long tmr_0xF101 = (millis()/1000);
                  
   fill_canMsg->data[0] = 0x07;
       
-  fill_canMsg->data[4] = (tmr_0xF101 & 0xFF000000);
-  fill_canMsg->data[5] = (tmr_0xF101 & 0x00FF0000);
-  fill_canMsg->data[6] = (tmr_0xF101 & 0x0000FF00);
-  fill_canMsg->data[7] = (tmr_0xF101 & 0x000000FF);
+  fill_canMsg->data[4] = ((tmr_0xF101 & 0xFF000000) >> 24);
+  fill_canMsg->data[5] = ((tmr_0xF101 & 0x00FF0000) >> 16);
+  fill_canMsg->data[6] = ((tmr_0xF101 & 0x0000FF00) >> 8);
+  fill_canMsg->data[7] = ((tmr_0xF101 & 0x000000FF) >> 0);
 }
 
 void setup() 
