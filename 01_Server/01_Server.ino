@@ -1,44 +1,27 @@
-
-#include <SPI.h>
-#include <Wire.h>
-#include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h>        
-#include <mcp2515.h> 
+#include <C:\workspace\03_Source_code\nanoCAN_lib\nanoCAN_lib.h>
 
 /****************************************************************************************************/
-
-#define SCREEN_WIDTH 128 // OLED display width, in pixels
-#define SCREEN_HEIGHT 32 // OLED display height, in pixels
-
-// Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)
-#define OLED_RESET     -1 // Reset pin # (or -1 if sharing Arduino reset pin)
+// Declaration for OLED
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 /****************************************************************************************************/
 MCP2515 mcp2515(10);
 struct can_frame rx_canMsg;
 struct can_frame tx_canMsg;
-word tx_cntr;
+
 byte retval;
 /****************************************************************************************************/
 
-// 'index', 128x32px
-const unsigned char myBitmap [] PROGMEM = {
-};
-
 void RDBI_0xF101(struct can_frame *fill_canMsg)
 {
-  word t_0XF101 = millis()/1000;
-  
-  fill_canMsg->can_dlc = 0x05;               
-  fill_canMsg->data[0] = 0x62;      
-  fill_canMsg->data[1] = 0xF1;   
-  fill_canMsg->data[2] = 0x01;            
-  fill_canMsg->data[3] = ((t_0XF101) & 0xFF00);
-  fill_canMsg->data[4] = ((t_0XF101) & 0x00FF);
-  fill_canMsg->data[5] = 0x00;
-  fill_canMsg->data[6] = 0x00;
-  fill_canMsg->data[7] = 0x00;
+  unsigned long tmr_0xF101 = millis()/1000;
+                 
+  fill_canMsg->data[0] = 0x07;
+      
+  fill_canMsg->data[4] = (tmr_0xF101 & 0xFF000000);
+  fill_canMsg->data[5] = (tmr_0xF101 & 0x00FF0000);
+  fill_canMsg->data[6] = (tmr_0xF101 & 0x0000FF00);
+  fill_canMsg->data[7] = (tmr_0xF101 & 0x000000FF);
 }
 
 void setup() 
@@ -91,15 +74,20 @@ void loop()
       
       //Response CANID
       tx_canMsg.can_id  = 0x7E8;
+      tx_canMsg.can_dlc = rx_canMsg.can_dlc; 
 
       //RDBI received
-      if((rx_canMsg.data[0] == 0x22) && 
-                  (rx_canMsg.can_dlc == 0x3))
+      if((rx_canMsg.data[0] == 0x03) && 
+                  (rx_canMsg.data[1] == 0x22))
       {
+        tx_canMsg.data[1] = (rx_canMsg.data[1] + 0x40);      
+  
         //RDBI - 0xF101 requested
-        if((rx_canMsg.data[1] == 0xF1) &&
-              (rx_canMsg.data[2] == 0x01))
+        if((((rx_canMsg.data[2] << 8) & 0xFF00) | 
+            ((rx_canMsg.data[3] << 0) & 0x00FF) ) == 0xF101)
         {
+            tx_canMsg.data[2] = rx_canMsg.data[2];   
+            tx_canMsg.data[3] = rx_canMsg.data[3]; 
             RDBI_0xF101(&tx_canMsg);
         }        
       }
@@ -111,7 +99,10 @@ void loop()
     {
           display.clearDisplay();
           display.setCursor(0, 20);
-          display.println((tx_canMsg.data[3] & 0xFF00) | (tx_canMsg.data[4] & 0x00FF));
+          display.println(((tx_canMsg.data[4] << 24) & 0xFF000000) | 
+                          ((tx_canMsg.data[5] << 16) & 0x00FF0000) | 
+                          ((tx_canMsg.data[6] << 8)  & 0x0000FF00) | 
+                          ((tx_canMsg.data[7] << 0)  & 0x000000FF));
           display.display();
     }
   }
