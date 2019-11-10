@@ -19,7 +19,8 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 /****************************************************************************************************/
 // Declaration for CAN bus
 MCP2515 mcp2515(10);
-struct can_frame canMsg;
+struct can_frame rx_canMsg;
+struct can_frame tx_canMsg;
 byte retval = MCP2515::ERROR_OK;
 /****************************************************************************************************/
 // Declaration for LOGO
@@ -78,6 +79,10 @@ void setup()
   display.drawBitmap(0, 0, myBitmap, 128, 32, WHITE); //Logo display
   display.display();
 
+  delay(1000);
+
+  // Clear the buffer
+  display.clearDisplay();
 /****************************************************************************************************/
   SPI.begin();
   mcp2515.reset();
@@ -88,46 +93,53 @@ void setup()
 // the loop function runs over and over again forever
 void loop() 
 { 
+  display.setCursor(0, 0);
+  display.println("Client");
+  display.display();
+  
   //Request - CPU time - every 2sec
   start_timer(&timer1);
   if((get_timer(&timer1) > 2000) ||
         (retval != MCP2515::ERROR_OK))
   {
-    canMsg.can_id  = 0x7E0;           
-    canMsg.can_dlc = 0x03;               
-    canMsg.data[0] = 0x22;      
-    canMsg.data[1] = 0xF1;   
-    canMsg.data[2] = 0x01;            
-    canMsg.data[3] = 0x00;
-    canMsg.data[4] = 0x00;
-    canMsg.data[5] = 0x00;
-    canMsg.data[6] = 0x00;
-    canMsg.data[7] = 0x00;
+    tx_canMsg.can_id  = 0x7E0;           
+    tx_canMsg.can_dlc = 0x03;               
+    tx_canMsg.data[0] = 0x22;      
+    tx_canMsg.data[1] = 0xF1;   
+    tx_canMsg.data[2] = 0x01;            
+    tx_canMsg.data[3] = 0x00;
+    tx_canMsg.data[4] = 0x00;
+    tx_canMsg.data[5] = 0x00;
+    tx_canMsg.data[6] = 0x00;
+    tx_canMsg.data[7] = 0x00;
 
-    retval = mcp2515.sendMessage(&canMsg);
+    retval = mcp2515.sendMessage(&tx_canMsg);
     stop_timer(&timer1);
+
+    display.setCursor(0, 10);
+    display.println("Tx success");
+    display.display();
   }
  
   /****************************************************************************************************/
-  if (mcp2515.readMessage(&canMsg) == MCP2515::ERROR_OK)
+  if (mcp2515.readMessage(&rx_canMsg) == MCP2515::ERROR_OK)
   {
-    if((canMsg.can_id, HEX) == 0x7E0)
+    if(rx_canMsg.can_id == 0x7E8)
     {
-      if((canMsg.data[0], HEX) == 0x22)
+      if(rx_canMsg.data[0] == 0x62)
       {
-        if(((canMsg.data[1], HEX) == 0xF1) &&
-              ((canMsg.data[2], HEX) == 0x01) && 
-                  ((canMsg.can_dlc, HEX) == 0x5))
+        if((rx_canMsg.data[1] == 0xF1) &&
+              (rx_canMsg.data[2] == 0x01) && 
+                  (rx_canMsg.can_dlc == 0x5))
         {
-          display.setCursor(0, 0);
-          display.println(canMsg.can_id, HEX);
+          // Clear the buffer
+          display.clearDisplay();
+          
+          display.setCursor(0, 20);
+          display.println((rx_canMsg.data[3] & 0xFF00) | (rx_canMsg.data[4] & 0x00FF));
+          display.display();
         }        
       }
     }
   }
-  else
-  {
-
-  }
-  display.display();
 }
