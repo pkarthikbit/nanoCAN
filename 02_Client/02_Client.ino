@@ -8,8 +8,72 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 MCP2515 mcp2515(10);
 struct can_frame rx_canMsg;
 struct can_frame tx_canMsg;
-timer_struct timer1;
+
+timer_struct timer_0xF101_req;
+timer_struct timer_0xF101_resp;
+
 byte retval = MCP2515::ERROR_OK;
+boolean tstr_req = FALSE;     //Flag to check for P2 timer. P2* = P2 and no NRC78.
+/***************************************************************************************************/
+
+//RDBI - 0xF101
+void RDBI_0xF101()
+{
+  //Request - CPU time - every 2000 ms
+  start_timer(&timer_0xF101_req);
+  if(((get_timer(&timer_0xF101_req) > 2000) ||
+        (retval != MCP2515::ERROR_OK)) &&
+        (tstr_req == FALSE))
+  {
+    tx_canMsg.data[0] = 0x03;         
+    tx_canMsg.data[2] = 0xF1;            
+    tx_canMsg.data[3] = 0x01;
+
+    retval = mcp2515.sendMessage(&tx_canMsg);
+    stop_timer(&timer_0xF101_req);
+    start_timer(&timer_0xF101_resp);
+    tstr_req = TRUE;
+    
+    display.setCursor(0, 10);
+    display.println("Tx success");
+    display.display();
+  }
+
+   /****************************************************************************************************/
+  if((tstr_req != FALSE) &&
+    (get_timer(&timer_0xF101_resp) < 100))
+  {
+    if (mcp2515.readMessage(&rx_canMsg) == MCP2515::ERROR_OK)
+    {   
+      if((rx_canMsg.can_id == 0x7E8) &&
+          (rx_canMsg.can_dlc == tx_canMsg.can_dlc))
+      {
+        if(rx_canMsg.data[1] == (tx_canMsg.data[1] + 0x40))
+        {
+          if((rx_canMsg.data[0] == 0x07) &&
+              ((((rx_canMsg.data[2] << 8) & 0xFF00) | 
+                ((rx_canMsg.data[3] << 0) & 0x00FF) ) == 0xF101))
+          {
+            // Clear the buffer
+            display.clearDisplay();
+            
+            display.setCursor(0, 20);
+            display.println(((rx_canMsg.data[4] << 24) & 0xFF000000) | 
+                            ((rx_canMsg.data[5] << 16) & 0x00FF0000) | 
+                            ((rx_canMsg.data[6] << 8)  & 0x0000FF00) | 
+                            ((rx_canMsg.data[7] << 0)  & 0x000000FF));
+            display.display();
+          }        
+        }
+      }
+    }
+  }
+  else
+  {
+    tstr_req = FALSE;
+    stop_timer(&timer_0xF101_resp);   
+  }
+}
 
 void setup() 
 {
@@ -54,52 +118,13 @@ void loop()
 
   tx_canMsg.can_id  = 0x7E0;           
   tx_canMsg.can_dlc = 0x08; 
+
+  //RDBI request
   tx_canMsg.data[1] = 0x22;
   tx_canMsg.data[4] = 0x00;
   tx_canMsg.data[5] = 0x00;
   tx_canMsg.data[6] = 0x00;
   tx_canMsg.data[7] = 0x00;
 
-  //Request - CPU time - every 2000 ms
-  start_timer(&timer1);
-  if((get_timer(&timer1) > 2000) ||
-        (retval != MCP2515::ERROR_OK))
-  {
-    tx_canMsg.data[0] = 0x03;         
-    tx_canMsg.data[2] = 0xF1;            
-    tx_canMsg.data[3] = 0x01;
-
-    retval = mcp2515.sendMessage(&tx_canMsg);
-    stop_timer(&timer1);
-
-    display.setCursor(0, 10);
-    display.println("Tx success");
-    display.display();
-  }
- 
-  /****************************************************************************************************/
-  if (mcp2515.readMessage(&rx_canMsg) == MCP2515::ERROR_OK)
-  {
-    if((rx_canMsg.can_id == 0x7E8) &&
-        (rx_canMsg.can_dlc == tx_canMsg.can_dlc))
-    {
-      if(rx_canMsg.data[1] == (tx_canMsg.data[1] + 0x40))
-      {
-        if((rx_canMsg.data[0] == 0x07) &&
-           (((rx_canMsg.data[2] << 8) & 0xFF00) | 
-            ((rx_canMsg.data[3] << 0) & 0x00FF) ) == 0xF101)
-        {
-          // Clear the buffer
-          display.clearDisplay();
-          
-          display.setCursor(0, 20);
-          display.println(((rx_canMsg.data[4] << 24) & 0xFF000000) | 
-                          ((rx_canMsg.data[5] << 16) & 0x00FF0000) | 
-                          ((rx_canMsg.data[6] << 8)  & 0x0000FF00) | 
-                          ((rx_canMsg.data[7] << 0)  & 0x000000FF));
-          display.display();
-        }        
-      }
-    }
-  }
+  RDBI_0xF101();
 }
