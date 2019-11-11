@@ -1,4 +1,5 @@
-#include <C:\workspace\03_Source_code\nanoCAN_lib\nanoCAN_lib.h>
+#include <Arduino.h>
+#include <nanoCAN_lib.h>
 
 /****************************************************************************************************/
 // Declaration for OLED
@@ -24,8 +25,7 @@ void RDBI_0xF101(struct can_frame *fill_canMsg)
   fill_canMsg->data[7] = ((tmr_0xF101 & 0x000000FF) >> 0);
 }
 
-void setup() 
-{
+void setup() {
   /* Pin 01 - Red light - Low On */
   /* Pin 13 - build in LED - High On */
   pinMode(13, OUTPUT);
@@ -56,10 +56,8 @@ void setup()
   mcp2515.setNormalMode();
 }
 
-// the loop function runs over and over again forever
-void loop() 
-{  
-  display.setCursor(0, 0);
+void loop() {
+ display.setCursor(0, 0);
   display.println("Server"); 
   display.display();
   
