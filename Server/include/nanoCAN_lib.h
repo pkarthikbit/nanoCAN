@@ -1,8 +1,12 @@
+#include <Arduino.h>
 #include <SPI.h>
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>        
 #include <mcp2515.h> 
+#include <time.h>
+#include <TimeLib.h>
+#include <DS1302RTC.h>
 
 // General Declaration
 #define FALSE 0

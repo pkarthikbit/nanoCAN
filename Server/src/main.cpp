@@ -1,4 +1,3 @@
-#include <Arduino.h>
 #include <nanoCAN_lib.h>
 
 /****************************************************************************************************/
@@ -12,6 +11,12 @@ struct can_frame tx_canMsg;
 
 byte retval;
 /****************************************************************************************************/
+// Init the DS1302
+// Set pins:  RST, DATA, CLK
+DS1302RTC RTC(7, 8, 9);
+
+tmElements_t myTime;
+/****************************************************************************************************/
 
 void RDBI_0xF101(struct can_frame *fill_canMsg)
 {
@@ -23,6 +28,20 @@ void RDBI_0xF101(struct can_frame *fill_canMsg)
   fill_canMsg->data[5] = ((tmr_0xF101 & 0x00FF0000) >> 16);
   fill_canMsg->data[6] = ((tmr_0xF101 & 0x0000FF00) >> 8);
   fill_canMsg->data[7] = ((tmr_0xF101 & 0x000000FF) >> 0);
+
+  RTC.read(myTime);
+
+  Serial.print(myTime.Hour, DEC);
+  Serial.print(':');
+  Serial.print(myTime.Minute,DEC);
+  Serial.print(':');
+  Serial.print(myTime.Second,DEC);
+  Serial.print('-');
+  Serial.print(myTime.Day,DEC);
+  Serial.print('/');
+  Serial.print(myTime.Month,DEC);
+  Serial.print('/');
+  Serial.println(1970 + (myTime.Year,DEC));
 }
 
 void setup() {
