@@ -16,7 +16,17 @@ timer_struct timer_0xF101_resp;
 byte retval = MCP2515::ERROR_OK;
 boolean tstr_req = FALSE;     //Flag to check for P2 timer. P2* = P2 and no NRC78.
 /***************************************************************************************************/
+// The rotary switch:
+//    * encoder pin CLK
+//    * encoder pin DT
+// Rotary press button SW
+#define pinCLK 2
+#define pinDT 4
+#define pinSW 3
 
+bool pin1_st, pin2_st, pin1_stOld, pin2_stOld;
+
+/***************************************************************************************************/
 //RDBI - 0xF101
 void RDBI_0xF101()
 {
@@ -34,10 +44,6 @@ void RDBI_0xF101()
     stop_timer(&timer_0xF101_req);
     start_timer(&timer_0xF101_resp);
     tstr_req = TRUE;
-    
-    display.setCursor(0, 10);
-    display.println("Tx success");
-    display.display();
   }
 
    /****************************************************************************************************/
@@ -108,6 +114,11 @@ void setup()
   mcp2515.reset();
   mcp2515.setBitrate(CAN_125KBPS, MCP_16MHZ); 
   mcp2515.setNormalMode();
+/****************************************************************************************************/
+  pinMode(pinCLK, INPUT);
+  pinMode(pinDT, INPUT);
+  pinMode(pinSW, INPUT);
+
 }
 
 // the loop function runs over and over again forever
@@ -128,4 +139,17 @@ void loop()
   tx_canMsg.data[7] = 0x00;
 
   RDBI_0xF101();
+/****************************************************************************************************/
+  pin1_stOld = pin1_st;
+  pin2_stOld = pin2_st;
+  pin1_st = digitalRead(pinCLK);
+  pin2_st = digitalRead(pinDT);
+  
+  display.setCursor(10, 10);
+  display.println(pin1_st);
+  display.setCursor(30, 10);
+  display.println(pin2_st);
+  display.setCursor(70, 10);
+  display.println(digitalRead(pinSW));
+  display.display();
 }
