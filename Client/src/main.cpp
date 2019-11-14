@@ -1,6 +1,24 @@
 #include <Arduino.h>
 #include <nanoCAN_lib.h>
 
+/***************************************************************************************************/
+//Display Menu
+String disp_menu[10] =
+{
+  "Menu_01",
+  "Menu_02",
+  "Menu_03",
+  "Menu_04",
+  "Menu_05",
+  "Menu_06",
+  "Menu_07",
+  "Menu_08",
+  "Menu_09",
+  "Menu_10"
+};
+
+int menu_sel = 1;
+timer_struct timer_nanoCANdisp;
 /****************************************************************************************************/
 // Declaration for OLED
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
@@ -25,6 +43,86 @@ boolean tstr_req = FALSE;     //Flag to check for P2 timer. P2* = P2 and no NRC7
 #define pinSW 3
 
 bool pin1_st, pin2_st, pin1_stOld, pin2_stOld;
+byte r_cntr, l_cntr;
+
+/***************************************************************************************************/
+int nanoCAN_rotarySwt()
+{
+  int ret_val;
+  
+  pin1_stOld = pin1_st;
+  pin2_stOld = pin2_st;
+  pin1_st = digitalRead(pinCLK);
+  pin2_st = digitalRead(pinDT);
+ 
+  if(pin1_st < pin2_st)
+  {
+    r_cntr++;
+  }
+  else if(pin1_st > pin2_st)
+  {
+    l_cntr++;
+  }
+
+  if(r_cntr > l_cntr)
+  {
+    //Clockwise
+    //Serial.println("right");
+    ret_val = 1;
+  }
+  else if(r_cntr < l_cntr)
+  {
+    //Anti-clockwise
+    //Serial.println("left");
+    ret_val = -1;
+  }
+  else
+  {
+    //Standstill
+    ret_val = 0;
+  }
+  r_cntr = 0;
+  l_cntr = 0;
+
+  return ret_val;
+}
+
+/***************************************************************************************************/
+void nanoCAN_display(int rot_key)
+{
+  start_timer(&timer_nanoCANdisp);
+  
+  if((rot_key != 0) && 
+     (get_timer(&timer_nanoCANdisp) > 1000))
+  {
+    menu_sel = menu_sel + rot_key;
+
+    if(menu_sel == 0)
+    {
+      menu_sel = 8;
+    }
+
+    if(menu_sel == 9)
+    {
+      menu_sel = 1;
+    }
+    
+    display.clearDisplay();
+    display.setTextSize(1);
+    display.setCursor(0, 0);
+    display.setTextColor(WHITE);
+    display.println(disp_menu[menu_sel - 1]);
+    display.setCursor(0, 10);
+    display.setTextColor(BLACK, WHITE);
+    display.println(disp_menu[menu_sel]);
+    display.setCursor(0, 20);
+    display.setTextColor(WHITE);
+    display.println(disp_menu[menu_sel + 1]);
+    display.display();
+
+    stop_timer(&timer_nanoCANdisp);
+  }
+}
 
 /***************************************************************************************************/
 //RDBI - 0xF101
@@ -61,15 +159,10 @@ void RDBI_0xF101()
               ((((rx_canMsg.data[2] << 8) & 0xFF00) | 
                 ((rx_canMsg.data[3] << 0) & 0x00FF) ) == 0xF101))
           {
-            // Clear the buffer
-            display.clearDisplay();
-            
-            display.setCursor(0, 20);
-            display.println(((rx_canMsg.data[4] << 24) & 0xFF000000) | 
-                            ((rx_canMsg.data[5] << 16) & 0x00FF0000) | 
-                            ((rx_canMsg.data[6] << 8)  & 0x0000FF00) | 
-                            ((rx_canMsg.data[7] << 0)  & 0x000000FF));
-            display.display();
+            //Serial.println(((rx_canMsg.data[4] << 24) & 0xFF000000) | 
+                           // ((rx_canMsg.data[5] << 16) & 0x00FF0000) | 
+                           // ((rx_canMsg.data[6] << 8)  & 0x0000FF00) | 
+                           // ((rx_canMsg.data[7] << 0)  & 0x000000FF));
           }        
         }
       }
@@ -98,10 +191,6 @@ void setup()
 
   // Clear the buffer
   display.clearDisplay();
-
-  display.setTextSize(1);
-  display.setTextColor(WHITE);
-  
   display.drawBitmap(0, 0, myBitmap, 128, 32, WHITE); //Logo display
   display.display();
 
@@ -124,9 +213,7 @@ void setup()
 // the loop function runs over and over again forever
 void loop() 
 { 
-  display.setCursor(0, 0);
-  display.println("Client");
-  display.display();
+  nanoCAN_display(nanoCAN_rotarySwt());
 
   tx_canMsg.can_id  = 0x7E0;           
   tx_canMsg.can_dlc = 0x08; 
@@ -140,16 +227,10 @@ void loop()
 
   RDBI_0xF101();
 /****************************************************************************************************/
-  pin1_stOld = pin1_st;
-  pin2_stOld = pin2_st;
-  pin1_st = digitalRead(pinCLK);
-  pin2_st = digitalRead(pinDT);
-  
-  display.setCursor(10, 10);
-  display.println(pin1_st);
-  display.setCursor(30, 10);
-  display.println(pin2_st);
-  display.setCursor(70, 10);
-  display.println(digitalRead(pinSW));
-  display.display();
+  if(!digitalRead(pinSW))
+  {
+    display.setCursor(100, 10);
+    display.println(menu_sel);
+    display.display(); 
+  }
 }
