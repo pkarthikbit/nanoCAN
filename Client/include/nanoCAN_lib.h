@@ -8,7 +8,8 @@
 #define FALSE 0
 #define TRUE !FALSE
 /****************************************************************************************************/
-
+#define NANOCAN_MENUCOUNT 10
+/****************************************************************************************************/
 // Declaration for OLED
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 32 // OLED display height, in pixels

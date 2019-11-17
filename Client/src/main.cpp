@@ -3,8 +3,9 @@
 
 /***************************************************************************************************/
 //Display Menu
-String disp_menu[10] =
+String disp_menu[NANOCAN_MENUCOUNT] =
 {
+  "Menu_00",
   "Menu_01",
   "Menu_02",
   "Menu_03",
@@ -13,8 +14,7 @@ String disp_menu[10] =
   "Menu_06",
   "Menu_07",
   "Menu_08",
-  "Menu_09",
-  "Menu_10"
+  "Menu_09"
 };
 
 int menu_sel = 1;
@@ -93,31 +93,48 @@ void nanoCAN_display(int rot_key)
   start_timer(&timer_nanoCANdisp);
   
   if((rot_key != 0) && 
-     (get_timer(&timer_nanoCANdisp) > 1000))
+     (get_timer(&timer_nanoCANdisp) > 500))
   {
+    byte i, j, k;
     menu_sel = menu_sel + rot_key;
 
-    if(menu_sel == 0)
+    if((menu_sel > 0) && 
+        (menu_sel < (NANOCAN_MENUCOUNT - 1)))
     {
-      menu_sel = 8;
+      i = menu_sel - 1;
+      j = menu_sel;
+      k = menu_sel + 1;
     }
+    else if((menu_sel == 0) ||
+            (menu_sel > (NANOCAN_MENUCOUNT - 1)))
+    {
+      menu_sel = 0;
+      
+      i = NANOCAN_MENUCOUNT - 1;
+      j = menu_sel; 
+      k = menu_sel + 1;
+    }
+    else if((menu_sel < 0) ||
+            (menu_sel == (NANOCAN_MENUCOUNT - 1)))
+    {
+      menu_sel = NANOCAN_MENUCOUNT - 1;
 
-    if(menu_sel == 9)
-    {
-      menu_sel = 1;
+      i = menu_sel - 1;
+      j = menu_sel; 
+      k = 0;
     }
-    
+  
     display.clearDisplay();
     display.setTextSize(1);
     display.setCursor(0, 0);
     display.setTextColor(WHITE);
-    display.println(disp_menu[menu_sel - 1]);
+    display.println(disp_menu[i]);
     display.setCursor(0, 10);
     display.setTextColor(BLACK, WHITE);
-    display.println(disp_menu[menu_sel]);
+    display.println(disp_menu[j]);
     display.setCursor(0, 20);
     display.setTextColor(WHITE);
-    display.println(disp_menu[menu_sel + 1]);
+    display.println(disp_menu[k]);
     display.display();
 
     stop_timer(&timer_nanoCANdisp);
