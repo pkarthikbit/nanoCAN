@@ -5,20 +5,21 @@
 //Display Menu
 String disp_menu[NANOCAN_MENUCOUNT] =
 {
-  "Menu_00",
-  "Menu_01",
-  "Menu_02",
-  "Menu_03",
+  "Wr Time",
+  "Wr Alarm",
+  "Set Alarm",
+  "Clr Alarm",
   "Menu_04",
   "Menu_05",
   "Menu_06",
   "Menu_07",
   "Menu_08",
-  "Menu_09"
+  "<-Exit"
 };
 
-int menu_sel = 1;
+int menu_sel = 1, submenu_sel, clk_HHMMSS[3];
 timer_struct timer_nanoCANdisp;
+
 /****************************************************************************************************/
 // Declaration for OLED
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
@@ -46,15 +47,31 @@ bool pin1_st, pin2_st, pin1_stOld, pin2_stOld;
 byte r_cntr, l_cntr;
 
 /***************************************************************************************************/
+bool pressSwt_raise;
+bool nanoCAN_pressSwt()
+{
+  if((!digitalRead(pinSW)) &&
+      (pressSwt_raise == false))
+  {
+    pressSwt_raise = true;
+    return true;
+  }
+  else
+  {
+    pressSwt_raise = !digitalRead(pinSW);
+    return false;
+  }
+}
+/***************************************************************************************************/
 int nanoCAN_rotarySwt()
 {
   int ret_val;
-  
+
   pin1_stOld = pin1_st;
   pin2_stOld = pin2_st;
   pin1_st = digitalRead(pinCLK);
   pin2_st = digitalRead(pinDT);
- 
+
   if(pin1_st < pin2_st)
   {
     r_cntr++;
@@ -64,31 +81,29 @@ int nanoCAN_rotarySwt()
     l_cntr++;
   }
 
-  if(r_cntr > l_cntr)
-  {
-    //Clockwise
-    //Serial.println("right");
-    ret_val = 1;
-  }
-  else if(r_cntr < l_cntr)
-  {
-    //Anti-clockwise
-    //Serial.println("left");
-    ret_val = -1;
-  }
-  else
-  {
-    //Standstill
-    ret_val = 0;
-  }
-  r_cntr = 0;
-  l_cntr = 0;
+    if(r_cntr > l_cntr)
+    {
+      //Clockwise
+      ret_val = 1;
+    }
+    else if(r_cntr < l_cntr)
+    {
+      //Anti-clockwise
+      ret_val = -1;
+    }
+    else
+    {
+      //Standstill
+      ret_val = 0;
+    }
+    r_cntr = 0;
+    l_cntr = 0;
 
   return ret_val;
 }
 
 /***************************************************************************************************/
-void nanoCAN_display(int rot_key)
+void nanoCAN_Menu(int rot_key)
 {
   start_timer(&timer_nanoCANdisp);
   
@@ -136,8 +151,99 @@ void nanoCAN_display(int rot_key)
     display.setTextColor(WHITE);
     display.println(disp_menu[k]);
     display.display();
-
+    
     stop_timer(&timer_nanoCANdisp);
+  }
+}
+
+/***************************************************************************************************/
+void nanoCAN_SubMenu()
+{
+  switch(menu_sel)
+  {
+    case 0: //Menu_0 - Wr Time
+    {
+      switch(submenu_sel)
+      {
+        case 1:
+        {
+          int rot_st = nanoCAN_rotarySwt();
+          if(rot_st> 0)
+          {
+            clk_HHMMSS[0]++;
+
+            if(clk_HHMMSS[0] > 12)
+            {
+              clk_HHMMSS[0] = 0;
+            }
+          }
+          else if(rot_st < 0)
+          {
+            clk_HHMMSS[0]--;
+
+            if(clk_HHMMSS[0] < 0)
+            {
+              clk_HHMMSS[0] = 12;
+            }
+          }
+
+          display.setCursor(70, 10);
+          display.setTextColor(BLACK, WHITE);
+          display.println(clk_HHMMSS[0]);
+          display.setCursor(70, 20);
+          display.println("HH");
+          display.display();
+        }
+        break;
+
+        case 2:
+        {
+          int rot_st = nanoCAN_rotarySwt();
+          if(rot_st> 0)
+          {
+            clk_HHMMSS[1]++;
+
+            if(clk_HHMMSS[1] > 60)
+            {
+              clk_HHMMSS[1] = 0;
+            }
+          }
+          else if(rot_st < 0)
+          {
+            clk_HHMMSS[1]--;
+
+            if(clk_HHMMSS[1] < 0)
+            {
+              clk_HHMMSS[1] = 60;
+            }
+          }
+
+          display.setCursor(70, 10);
+          display.setTextColor(WHITE, BLACK);
+          display.println(clk_HHMMSS[0]);
+          display.setCursor(70, 20);
+          display.println("HH");
+
+          display.setCursor(90, 10);
+          display.setTextColor(BLACK, WHITE);
+          display.println(clk_HHMMSS[1]);
+          display.setCursor(90, 20);
+          display.println("MM");
+
+          display.display();
+        }
+        break;
+
+        default:
+        {
+          break;
+        }  
+      }
+    }
+    break;
+
+    default:
+    break;
   }
 }
 
@@ -230,7 +336,18 @@ void setup()
 // the loop function runs over and over again forever
 void loop() 
 { 
-  nanoCAN_display(nanoCAN_rotarySwt());
+  if(submenu_sel == 0)
+  {
+    nanoCAN_Menu(nanoCAN_rotarySwt());
+  }
+/****************************************************************************************************/  
+  if(nanoCAN_pressSwt())
+  {
+    submenu_sel++;
+  } 
+  Serial.println(submenu_sel);
+
+  nanoCAN_SubMenu();
 
   tx_canMsg.can_id  = 0x7E0;           
   tx_canMsg.can_dlc = 0x08; 
@@ -244,10 +361,4 @@ void loop()
 
   RDBI_0xF101();
 /****************************************************************************************************/
-  if(!digitalRead(pinSW))
-  {
-    display.setCursor(100, 10);
-    display.println(menu_sel);
-    display.display(); 
-  }
 }
