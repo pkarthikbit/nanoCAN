@@ -17,8 +17,10 @@ String disp_menu[NANOCAN_MENUCOUNT] =
   "<-Exit"
 };
 
-int menu_sel = 1, submenu_sel, clk_HHMMSS[3];
-timer_struct timer_nanoCANdisp;
+int menu_sel = 1, submenu_sel;
+byte clk_HHMMSS[3];
+timer_struct timer_nanoCANMenudisp;
+timer_struct timer_nanoCANSubMenudisp;
 
 /****************************************************************************************************/
 // Declaration for OLED
@@ -105,10 +107,10 @@ int nanoCAN_rotarySwt()
 /***************************************************************************************************/
 void nanoCAN_Menu(int rot_key)
 {
-  start_timer(&timer_nanoCANdisp);
+  start_timer(&timer_nanoCANMenudisp);
   
   if((rot_key != 0) && 
-     (get_timer(&timer_nanoCANdisp) > 500))
+     (get_timer(&timer_nanoCANMenudisp) > 500))
   {
     byte i, j, k;
     menu_sel = menu_sel + rot_key;
@@ -152,22 +154,32 @@ void nanoCAN_Menu(int rot_key)
     display.println(disp_menu[k]);
     display.display();
     
-    stop_timer(&timer_nanoCANdisp);
+    stop_timer(&timer_nanoCANMenudisp);
   }
 }
 
 /***************************************************************************************************/
 void nanoCAN_SubMenu()
 {
-  switch(menu_sel)
+  if(menu_sel == 0) //Menu_0 - Wr Time
   {
-    case 0: //Menu_0 - Wr Time
+    switch(submenu_sel)
     {
-      switch(submenu_sel)
+      case 0:
       {
-        case 1:
+        //do nothing
+      }
+      break;
+      
+      case 1:
+      {
+        int rot_st = nanoCAN_rotarySwt();
+
+        start_timer(&timer_nanoCANSubMenudisp);
+
+        if((rot_st != 0) &&
+            (get_timer(&timer_nanoCANSubMenudisp) > 500))
         {
-          int rot_st = nanoCAN_rotarySwt();
           if(rot_st> 0)
           {
             clk_HHMMSS[0]++;
@@ -186,19 +198,28 @@ void nanoCAN_SubMenu()
               clk_HHMMSS[0] = 12;
             }
           }
-
-          display.setCursor(70, 10);
+          display.clearDisplay();
+          display.setCursor(00, 10);
           display.setTextColor(BLACK, WHITE);
           display.println(clk_HHMMSS[0]);
-          display.setCursor(70, 20);
+          display.setCursor(00, 20);
           display.println("HH");
           display.display();
+          stop_timer(&timer_nanoCANSubMenudisp);
         }
-        break;
+      }
+      break;
 
-        case 2:
+      case 2:
+      {
+        int rot_st = nanoCAN_rotarySwt();
+        
+        stop_timer(&timer_nanoCANSubMenudisp);
+        start_timer(&timer_nanoCANSubMenudisp);
+
+        if((rot_st != 0) &&
+            (get_timer(&timer_nanoCANSubMenudisp) > 500))
         {
-          int rot_st = nanoCAN_rotarySwt();
           if(rot_st> 0)
           {
             clk_HHMMSS[1]++;
@@ -218,32 +239,110 @@ void nanoCAN_SubMenu()
             }
           }
 
-          display.setCursor(70, 10);
+          display.clearDisplay();
+          display.setCursor(00, 10);
           display.setTextColor(WHITE, BLACK);
           display.println(clk_HHMMSS[0]);
-          display.setCursor(70, 20);
+          display.setCursor(00, 20);
           display.println("HH");
 
-          display.setCursor(90, 10);
+          display.setCursor(30, 10);
           display.setTextColor(BLACK, WHITE);
           display.println(clk_HHMMSS[1]);
-          display.setCursor(90, 20);
+          display.setCursor(30, 20);
           display.println("MM");
 
           display.display();
+          stop_timer(&timer_nanoCANSubMenudisp);
         }
-        break;
-
-        default:
-        {
-          break;
-        }  
       }
-    }
-    break;
+      break;
 
-    default:
-    break;
+      case 3:
+      {
+        int rot_st = nanoCAN_rotarySwt();
+        
+        stop_timer(&timer_nanoCANSubMenudisp);
+        start_timer(&timer_nanoCANSubMenudisp);
+
+        if((rot_st != 0) &&
+          (get_timer(&timer_nanoCANSubMenudisp) > 500))
+        {
+          if(rot_st> 0)
+          {
+            clk_HHMMSS[2]++;
+
+            if(clk_HHMMSS[2] > 60)
+            {
+              clk_HHMMSS[2] = 0;
+            }
+          }
+          else if(rot_st < 0)
+          {
+            clk_HHMMSS[2]--;
+
+            if(clk_HHMMSS[2] < 0)
+            {
+              clk_HHMMSS[2] = 60;
+            }
+          }
+
+          display.clearDisplay();
+          display.setCursor(00, 10);
+          display.setTextColor(WHITE, BLACK);
+          display.println(clk_HHMMSS[0]);
+          display.setCursor(00, 20);
+          display.println("HH");
+
+          display.setCursor(30, 10);
+          display.setTextColor(WHITE, BLACK);
+          display.println(clk_HHMMSS[1]);
+          display.setCursor(30, 20);
+          display.println("MM");
+
+          display.setCursor(60, 10);
+          display.setTextColor(BLACK, WHITE);
+          display.println(clk_HHMMSS[2]);
+          display.setCursor(60, 20);
+          display.println("SS");
+
+          display.display();
+          stop_timer(&timer_nanoCANSubMenudisp);
+        }
+      } 
+      break;
+
+      default:
+      {
+        display.clearDisplay();
+        display.setCursor(00, 10);
+        display.setTextColor(WHITE, BLACK);
+        display.println(clk_HHMMSS[0]);
+        display.setCursor(00, 20);
+        display.println("HH");
+
+        display.setCursor(30, 10);
+        display.setTextColor(WHITE, BLACK);
+        display.println(clk_HHMMSS[1]);
+        display.setCursor(30, 20);
+        display.println("MM");
+
+        display.setCursor(60, 10);
+        display.setTextColor(WHITE, BLACK);
+        display.println(clk_HHMMSS[2]);
+        display.setCursor(60, 20);
+        display.println("SS");
+
+        display.setCursor(0, 30);
+        display.setTextColor(BLACK, WHITE);
+        display.println(disp_menu[NANOCAN_MENUCOUNT-1]);
+
+        display.display();
+        stop_timer(&timer_nanoCANSubMenudisp);
+        submenu_sel = 0;
+      }
+      break;
+    }
   }
 }
 
