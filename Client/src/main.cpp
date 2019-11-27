@@ -17,7 +17,7 @@ String disp_menu[NANOCAN_MENUCOUNT] =
   "<-Exit"
 };
 
-byte disp_submenu[60];
+byte disp_submenu[60], req_time[3];
 byte NANOCAN_SUBMENUDGTCNT[3] = {24, 60, 60};
 
 int menu_sel = -1, submenu_sel = -1, submenuopt_sel = 1;
@@ -181,6 +181,7 @@ void nanoCAN_SubMenu(int rot_key)
     {
       submenuopt_bypass = false;
     }
+
     display.clearDisplay();
     display.setTextSize(1);
     display.setCursor(0, 0);
@@ -189,6 +190,13 @@ void nanoCAN_SubMenu(int rot_key)
     display.setCursor(0, 20);
     display.setTextColor(WHITE);
     display.println(disp_menu[NANOCAN_MENUCOUNT - 1]);
+
+    for(byte x=0; x < submenu_sel; x++)
+    {
+      display.setCursor((60 + (20 * x)), 10);
+      display.setTextColor(WHITE);
+      display.println(req_time[x]);
+    }
     
     byte i, j, k;
     submenuopt_sel = submenuopt_sel + rot_key;
@@ -218,8 +226,6 @@ void nanoCAN_SubMenu(int rot_key)
       j = submenuopt_sel; 
       k = 0;
     }
-  
-    submenuopt_sel = j;
 
     display.setCursor((60 + (20 * submenu_sel)), 0);
     display.setTextColor(WHITE);
@@ -231,7 +237,10 @@ void nanoCAN_SubMenu(int rot_key)
     display.setTextColor(WHITE);
     display.println(disp_submenu[k]);
     display.display();
-    
+
+    submenuopt_sel = j;
+    req_time[submenu_sel] = disp_submenu[submenuopt_sel];
+
     stop_timer(&timer_nanoCANSubMenudisp);
   }
 }
@@ -337,7 +346,15 @@ void loop()
   if(nanoCAN_pressSwt())
   {
     submenu_sel++;
-    Serial.println(submenu_sel);
+    if(submenu_sel >= 3)
+    {
+      submenu_sel = -1;
+      for(byte x=0; x <3; x++)
+      {
+        Serial.print(req_time[x]);
+        Serial.print(":");
+      }
+    }
   } 
 
   if(submenu_sel >= 0)
