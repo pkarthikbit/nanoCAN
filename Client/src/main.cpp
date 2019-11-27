@@ -20,7 +20,8 @@ String disp_menu[NANOCAN_MENUCOUNT] =
 byte disp_submenu[60];
 byte NANOCAN_SUBMENUDGTCNT[3] = {24, 60, 60};
 
-int menu_sel = -1, submenu_sel = -1, submenuopt_sel = 0xffff;
+int menu_sel = -1, submenu_sel = -1, submenuopt_sel = 1;
+bool submenuopt_bypass = false;
 char clk_HHMMSS[3];
 
 timer_struct timer_pressSwt;
@@ -172,13 +173,13 @@ void nanoCAN_SubMenu(int rot_key)
 { 
   start_timer(&timer_nanoCANSubMenudisp);
   
-  if((submenuopt_sel == 0xffff) ||
+  if((submenuopt_bypass != false) ||
     ((rot_key != 0) && 
      (get_timer(&timer_nanoCANSubMenudisp) > 500)))
   {
-    if(submenuopt_sel == 0xffff)
+    if(submenuopt_bypass != false)
     {
-      submenuopt_sel = 1;
+      submenuopt_bypass = false;
     }
     display.clearDisplay();
     display.setTextSize(1);
@@ -341,6 +342,7 @@ void loop()
 
   if(submenu_sel >= 0)
   {
+    submenuopt_bypass = true;
     nanoCAN_SubMenu(nanoCAN_rotarySwt());
   }
 
