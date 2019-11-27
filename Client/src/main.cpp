@@ -17,7 +17,7 @@ String disp_menu[NANOCAN_MENUCOUNT] =
   "<-Exit"
 };
 
-byte disp_submenu[60], req_time[3];
+byte disp_submenu[60], req_CmnTime[3], req_time[3], req_alarm[3];
 byte NANOCAN_SUBMENUDGTCNT[3] = {24, 60, 60};
 
 int menu_sel = -1, submenu_sel = -1, submenuopt_sel = 1;
@@ -148,8 +148,6 @@ void nanoCAN_Menu(int rot_key)
       j = menu_sel; 
       k = 0;
     }
-
-    menu_sel = j;
   
     display.clearDisplay();
     display.setTextSize(1);
@@ -163,6 +161,8 @@ void nanoCAN_Menu(int rot_key)
     display.setTextColor(WHITE);
     display.println(disp_menu[k]);
     display.display();
+
+    menu_sel = j;
     
     stop_timer(&timer_nanoCANMenudisp);
   }
@@ -195,7 +195,7 @@ void nanoCAN_SubMenu(int rot_key)
     {
       display.setCursor((60 + (20 * x)), 10);
       display.setTextColor(WHITE);
-      display.println(req_time[x]);
+      display.println(req_CmnTime[x]);
     }
     
     byte i, j, k;
@@ -239,7 +239,7 @@ void nanoCAN_SubMenu(int rot_key)
     display.display();
 
     submenuopt_sel = j;
-    req_time[submenu_sel] = disp_submenu[submenuopt_sel];
+    req_CmnTime[submenu_sel] = disp_submenu[submenuopt_sel];
 
     stop_timer(&timer_nanoCANSubMenudisp);
   }
@@ -349,9 +349,25 @@ void loop()
     if(submenu_sel >= 3)
     {
       submenu_sel = -1;
+
+      if(menu_sel == 0)
+      {
+        for(byte x=0; x <3; x++)
+        {
+          req_time[x] = req_CmnTime[x];
+        }
+      }
+      else if(menu_sel == 1)
+      {
+        for(byte x=0; x <3; x++)
+        {
+          req_alarm[x] = req_CmnTime[x];
+        }
+      }
+
       for(byte x=0; x <3; x++)
       {
-        Serial.print(req_time[x]);
+        Serial.print(req_CmnTime[x]);
         Serial.print(":");
       }
     }
@@ -359,8 +375,17 @@ void loop()
 
   if(submenu_sel >= 0)
   {
-    submenuopt_bypass = true;
-    nanoCAN_SubMenu(nanoCAN_rotarySwt());
+    if((menu_sel == 0) ||
+        (menu_sel == 1))
+    {
+      submenuopt_bypass = true;
+      nanoCAN_SubMenu(nanoCAN_rotarySwt());
+    }
+    else
+    {
+      submenu_sel = -1;
+    }
+    
   }
 
   tx_canMsg.can_id  = 0x7E0;           
