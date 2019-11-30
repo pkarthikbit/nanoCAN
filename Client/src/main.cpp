@@ -298,8 +298,13 @@ void RDBI_0xF101()
         (tstr_req == FALSE))
   {
     tx_canMsg.data[0] = 0x03;         
+    tx_canMsg.data[1] = 0x22;
     tx_canMsg.data[2] = 0xF1;            
     tx_canMsg.data[3] = 0x01;
+    tx_canMsg.data[4] = 0x00;
+    tx_canMsg.data[5] = 0x00;
+    tx_canMsg.data[6] = 0x00;
+    tx_canMsg.data[7] = 0x00;
 
     retval = mcp2515.sendMessage(&tx_canMsg);
     stop_timer(&timer_0xF101_req);
@@ -348,7 +353,8 @@ void WDBI_0xF101()
         (retval != MCP2515::ERROR_OK)) &&
         (tstr_req == FALSE))
   {
-    tx_canMsg.data[0] = 0x06;         
+    tx_canMsg.data[0] = 0x06;  
+    tx_canMsg.data[1] = 0x2E;       
     tx_canMsg.data[2] = 0xF1;            
     tx_canMsg.data[3] = 0x01;
     tx_canMsg.data[4] = req_time[0];
@@ -400,7 +406,8 @@ void WDBI_0xF102()
         (retval != MCP2515::ERROR_OK)) &&
         (tstr_req == FALSE))
   {
-    tx_canMsg.data[0] = 0x06;         
+    tx_canMsg.data[0] = 0x06;   
+    tx_canMsg.data[1] = 0x2E;      
     tx_canMsg.data[2] = 0xF1;            
     tx_canMsg.data[3] = 0x02;
     tx_canMsg.data[4] = req_alarm[0];
@@ -452,7 +459,8 @@ void WDBI_0xF103()
         (retval != MCP2515::ERROR_OK)) &&
         (tstr_req == FALSE))
   {
-    tx_canMsg.data[0] = 0x04;         
+    tx_canMsg.data[0] = 0x04;  
+    tx_canMsg.data[1] = 0x2E;       
     tx_canMsg.data[2] = 0xF1;            
     tx_canMsg.data[3] = 0x03;
     tx_canMsg.data[4] = alarm_st;
@@ -544,34 +552,10 @@ void loop()
   if(nanoCAN_pressSwt())
   {
     submenu_sel++;
-    if(submenu_sel >= 3)
-    {
-      submenu_sel = -1;
-
-      if(menu_sel == 0)
-      {
-        for(byte x=0; x <3; x++)
-        {
-          req_time[x] = req_CmnTime[x];
-        }
-      }
-      else if(menu_sel == 1)
-      {
-        for(byte x=0; x <3; x++)
-        {
-          req_alarm[x] = req_CmnTime[x];
-        }
-      }
-
-      for(byte x=0; x <3; x++)
-      {
-        Serial.print(req_CmnTime[x]);
-        Serial.print(":");
-      }
-    }
   } 
 
-  if(submenu_sel >= 0)
+  if((submenu_sel >= 0) &&
+     (submenu_sel < 3))
   {
     if((menu_sel == 0) ||
         (menu_sel == 1))
@@ -593,23 +577,40 @@ void loop()
     {
       submenu_sel = -1;
     }
-    
+  }
+  else //(submenu_sel >= 3)
+  {
+    submenu_sel = -1;
+
+    if(menu_sel == 0)
+    {
+      for(byte x=0; x <3; x++)
+      {
+        req_time[x] = req_CmnTime[x];
+      }
+    }
+    else if(menu_sel == 1)
+    {
+      for(byte x=0; x <3; x++)
+      {
+        req_alarm[x] = req_CmnTime[x];
+      }
+    }
+
+    for(byte x=0; x <3; x++)
+    {
+      Serial.print(req_CmnTime[x]);
+      Serial.print(":");
+    }
   }
 
   tx_canMsg.can_id  = 0x7E0;           
   tx_canMsg.can_dlc = 0x08; 
 
   //RDBI request
-  tx_canMsg.data[1] = 0x22;
-  tx_canMsg.data[4] = 0x00;
-  tx_canMsg.data[5] = 0x00;
-  tx_canMsg.data[6] = 0x00;
-  tx_canMsg.data[7] = 0x00;
-
   RDBI_0xF101();
 
   //WDBI request
-  tx_canMsg.data[1] = 0x2E;
   WDBI_0xF101();
   WDBI_0xF102();
   WDBI_0xF103();
