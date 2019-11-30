@@ -15,7 +15,7 @@ byte retval;
 // Set pins:  RST, DATA, CLK
 DS1302RTC RTC(7, 8, 9);
 
-tmElements_t myTime, newTime;
+tmElements_t myTime, newTime, alarm_t;
 /****************************************************************************************************/
 
 void RDBI_0xF101(struct can_frame *fill_canMsg)
@@ -37,6 +37,13 @@ void WDBI_0xF101(struct can_frame *fill_canMsg)
   newTime.Second = fill_canMsg->data[6];
 
   RTC.write(newTime);
+}
+
+void WDBI_0xF102(struct can_frame *fill_canMsg)
+{             
+  alarm_t.Hour   = fill_canMsg->data[4];
+  alarm_t.Minute = fill_canMsg->data[5];
+  alarm_t.Second = fill_canMsg->data[6];
 }
 
 void setup() {
@@ -131,6 +138,23 @@ void loop() {
           if(retval == MCP2515::ERROR_OK)
           {
             Serial.println("Time got success");
+          } 
+        }       
+        else if(((((rx_canMsg.data[2] << 8) & 0xFF00) | 
+            ((rx_canMsg.data[3] << 0) & 0x00FF) ) == 0xF102) &&
+            (rx_canMsg.data[0] == 0x06))
+        {
+          tx_canMsg.data[0] = 0x03;
+          tx_canMsg.data[2] = rx_canMsg.data[2];   
+          tx_canMsg.data[3] = rx_canMsg.data[3]; 
+          
+          WDBI_0xF102(&rx_canMsg);
+
+          retval = mcp2515.sendMessage(&tx_canMsg);
+
+          if(retval == MCP2515::ERROR_OK)
+          {
+            Serial.println("Alarm got success");
           } 
         }       
       }

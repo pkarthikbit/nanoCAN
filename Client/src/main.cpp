@@ -236,7 +236,8 @@ void WDBI_0xF102()
 {
   //Request - CPU time - every 2000 ms
   start_timer(&timer_0xF102_req);
-  if(((get_timer(&timer_0xF102_req) > 2000) ||
+
+  if(((get_timer(&timer_0xF102_req) > 0) ||
         (retval != MCP2515::ERROR_OK)) &&
         (tstr_req == FALSE))
   {
@@ -270,7 +271,7 @@ void WDBI_0xF102()
               ((((rx_canMsg.data[2] << 8) & 0xFF00) | 
                 ((rx_canMsg.data[3] << 0) & 0x00FF) ) == 0xF102))
           {
-            //Wr Alarm success
+            //assuming Wr alarm success, this would not be checked
           }        
         }
       }
@@ -518,6 +519,7 @@ void nanoCAN_SubMenu(int rot_key)
       }
      
       //WDBI request
+      tstr_req = FALSE;
       WDBI_0xF102();
     }
   }
