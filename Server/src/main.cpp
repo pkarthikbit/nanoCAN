@@ -15,7 +15,7 @@ byte retval;
 // Set pins:  RST, DATA, CLK
 DS1302RTC RTC(7, 8, 9);
 
-tmElements_t myTime;
+tmElements_t myTime, newTime;
 /****************************************************************************************************/
 
 void RDBI_0xF101(struct can_frame *fill_canMsg)
@@ -28,6 +28,15 @@ void RDBI_0xF101(struct can_frame *fill_canMsg)
   fill_canMsg->data[5] = myTime.Minute;
   fill_canMsg->data[6] = myTime.Second;
   fill_canMsg->data[7] = 0;
+}
+
+void WDBI_0xF101(struct can_frame *fill_canMsg)
+{             
+  newTime.Hour   = fill_canMsg->data[4];
+  newTime.Minute = fill_canMsg->data[5];
+  newTime.Second = fill_canMsg->data[6];
+
+  RTC.write(newTime);
 }
 
 void setup() {
@@ -98,10 +107,33 @@ void loop() {
   
         if(retval == MCP2515::ERROR_OK)
         {
-          Serial.println("Time reply success");
+          //Serial.println("Time reply success");
         }   
       }
-    
+      //WDBI received
+      else if(rx_canMsg.data[1] == 0x2E)
+      {
+        tx_canMsg.data[1] = (rx_canMsg.data[1] + 0x40);      
+  
+        //RDBI - 0xF101 requested
+        if(((((rx_canMsg.data[2] << 8) & 0xFF00) | 
+            ((rx_canMsg.data[3] << 0) & 0x00FF) ) == 0xF101) &&
+            (rx_canMsg.data[0] == 0x06))
+        {
+          tx_canMsg.data[0] = 0x03;
+          tx_canMsg.data[2] = rx_canMsg.data[2];   
+          tx_canMsg.data[3] = rx_canMsg.data[3]; 
+          
+          WDBI_0xF101(&rx_canMsg);
+
+          retval = mcp2515.sendMessage(&tx_canMsg);
+
+          if(retval == MCP2515::ERROR_OK)
+          {
+            Serial.println("Time got success");
+          } 
+        }       
+      }
     }
   }
 }

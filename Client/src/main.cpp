@@ -116,6 +116,228 @@ int nanoCAN_rotarySwt()
 }
 
 /***************************************************************************************************/
+//RDBI - 0xF101
+void RDBI_0xF101()
+{
+  //Request - CPU time - every 2000 ms
+  start_timer(&timer_0xF101_req);
+  if(((get_timer(&timer_0xF101_req) > 450) ||
+        (retval != MCP2515::ERROR_OK)) &&
+        (tstr_req == FALSE))
+  {
+    tx_canMsg.data[0] = 0x03;         
+    tx_canMsg.data[1] = 0x22;
+    tx_canMsg.data[2] = 0xF1;            
+    tx_canMsg.data[3] = 0x01;
+    tx_canMsg.data[4] = 0x00;
+    tx_canMsg.data[5] = 0x00;
+    tx_canMsg.data[6] = 0x00;
+    tx_canMsg.data[7] = 0x00;
+
+    retval = mcp2515.sendMessage(&tx_canMsg);
+    stop_timer(&timer_0xF101_req);
+    start_timer(&timer_0xF101_resp);
+    tstr_req = TRUE;
+  }
+
+   /****************************************************************************************************/
+  if((tstr_req != FALSE) &&
+    (get_timer(&timer_0xF101_resp) < 100))
+  {
+    if (mcp2515.readMessage(&rx_canMsg) == MCP2515::ERROR_OK)
+    {   
+      if((rx_canMsg.can_id == 0x7E8) &&
+          (rx_canMsg.can_dlc == tx_canMsg.can_dlc))
+      {
+        if(rx_canMsg.data[1] == (tx_canMsg.data[1] + 0x40))
+        {
+          if((rx_canMsg.data[0] == 0x06) &&
+              ((((rx_canMsg.data[2] << 8) & 0xFF00) | 
+                ((rx_canMsg.data[3] << 0) & 0x00FF) ) == 0xF101))
+          {
+            rcd_time[0] = rx_canMsg.data[4];
+            rcd_time[1] = rx_canMsg.data[5];
+            rcd_time[2] = rx_canMsg.data[6];
+          }        
+        }
+      }
+    }
+  }
+  else
+  {
+    tstr_req = FALSE;
+    stop_timer(&timer_0xF101_resp);   
+  }
+}
+
+
+/***************************************************************************************************/
+//WDBI - 0xF101
+void WDBI_0xF101()
+{
+  //Request - CPU time - every 2000 ms
+  start_timer(&timer_0xF101Wr_req);
+  
+  if(((get_timer(&timer_0xF101Wr_req) >= 0) ||
+        (retval != MCP2515::ERROR_OK)) &&
+        (tstr_req == FALSE))
+  {
+    tx_canMsg.data[0] = 0x06;  
+    tx_canMsg.data[1] = 0x2E;       
+    tx_canMsg.data[2] = 0xF1;            
+    tx_canMsg.data[3] = 0x01;
+    tx_canMsg.data[4] = req_time[0];
+    tx_canMsg.data[5] = req_time[1];
+    tx_canMsg.data[6] = req_time[2];
+    tx_canMsg.data[7] = 0x00;
+
+    retval = mcp2515.sendMessage(&tx_canMsg);
+    stop_timer(&timer_0xF101Wr_req);
+    start_timer(&timer_0xF101Wr_resp);
+    tstr_req = TRUE;
+  }
+
+   /****************************************************************************************************/
+  if((tstr_req != FALSE) &&
+    (get_timer(&timer_0xF101Wr_resp) < 100))
+  {
+    if (mcp2515.readMessage(&rx_canMsg) == MCP2515::ERROR_OK)
+    {   
+      if((rx_canMsg.can_id == 0x7E8) &&
+          (rx_canMsg.can_dlc == tx_canMsg.can_dlc))
+      {
+        if(rx_canMsg.data[1] == (tx_canMsg.data[1] + 0x40))
+        {
+          if((rx_canMsg.data[0] == 0x03) &&
+              ((((rx_canMsg.data[2] << 8) & 0xFF00) | 
+                ((rx_canMsg.data[3] << 0) & 0x00FF) ) == 0xF101))
+          {
+            //assuming Wr Time success, this would not be checked
+            for(byte x=0; x <3; x++)
+            {
+              Serial.print(req_time[x]);
+              Serial.print(":");
+            }
+          }        
+        }
+      }
+    }
+  }
+  else
+  {
+    tstr_req = FALSE;
+    stop_timer(&timer_0xF101Wr_resp);   
+  }
+}
+
+/***************************************************************************************************/
+//WDBI - 0xF102
+void WDBI_0xF102()
+{
+  //Request - CPU time - every 2000 ms
+  start_timer(&timer_0xF102_req);
+  if(((get_timer(&timer_0xF102_req) > 2000) ||
+        (retval != MCP2515::ERROR_OK)) &&
+        (tstr_req == FALSE))
+  {
+    tx_canMsg.data[0] = 0x06;   
+    tx_canMsg.data[1] = 0x2E;      
+    tx_canMsg.data[2] = 0xF1;            
+    tx_canMsg.data[3] = 0x02;
+    tx_canMsg.data[4] = req_alarm[0];
+    tx_canMsg.data[5] = req_alarm[1];
+    tx_canMsg.data[6] = req_alarm[2];
+    tx_canMsg.data[7] = 0x00;
+
+    retval = mcp2515.sendMessage(&tx_canMsg);
+    stop_timer(&timer_0xF102_req);
+    start_timer(&timer_0xF102_resp);
+    tstr_req = TRUE;
+  }
+
+   /****************************************************************************************************/
+  if((tstr_req != FALSE) &&
+    (get_timer(&timer_0xF102_resp) < 100))
+  {
+    if (mcp2515.readMessage(&rx_canMsg) == MCP2515::ERROR_OK)
+    {   
+      if((rx_canMsg.can_id == 0x7E8) &&
+          (rx_canMsg.can_dlc == tx_canMsg.can_dlc))
+      {
+        if(rx_canMsg.data[1] == (tx_canMsg.data[1] + 0x40))
+        {
+          if((rx_canMsg.data[0] == 0x03) &&
+              ((((rx_canMsg.data[2] << 8) & 0xFF00) | 
+                ((rx_canMsg.data[3] << 0) & 0x00FF) ) == 0xF102))
+          {
+            //Wr Alarm success
+          }        
+        }
+      }
+    }
+  }
+  else
+  {
+    tstr_req = FALSE;
+    stop_timer(&timer_0xF102_resp);   
+  }
+}
+
+/***************************************************************************************************/
+//WDBI - 0xF103
+void WDBI_0xF103()
+{
+  //Request - CPU time - every 2000 ms
+  start_timer(&timer_0xF103_req);
+  if(((get_timer(&timer_0xF103_req) > 2000) ||
+        (retval != MCP2515::ERROR_OK)) &&
+        (tstr_req == FALSE))
+  {
+    tx_canMsg.data[0] = 0x04;  
+    tx_canMsg.data[1] = 0x2E;       
+    tx_canMsg.data[2] = 0xF1;            
+    tx_canMsg.data[3] = 0x03;
+    tx_canMsg.data[4] = alarm_st;
+    tx_canMsg.data[5] = 0x00;
+    tx_canMsg.data[6] = 0x00;
+    tx_canMsg.data[7] = 0x00;
+
+    retval = mcp2515.sendMessage(&tx_canMsg);
+    stop_timer(&timer_0xF103_req);
+    start_timer(&timer_0xF103_resp);
+    tstr_req = TRUE;
+  }
+
+   /****************************************************************************************************/
+  if((tstr_req != FALSE) &&
+    (get_timer(&timer_0xF103_resp) < 100))
+  {
+    if (mcp2515.readMessage(&rx_canMsg) == MCP2515::ERROR_OK)
+    {   
+      if((rx_canMsg.can_id == 0x7E8) &&
+          (rx_canMsg.can_dlc == tx_canMsg.can_dlc))
+      {
+        if(rx_canMsg.data[1] == (tx_canMsg.data[1] + 0x40))
+        {
+          if((rx_canMsg.data[0] == 0x03) &&
+              ((((rx_canMsg.data[2] << 8) & 0xFF00) | 
+                ((rx_canMsg.data[3] << 0) & 0x00FF) ) == 0xF103))
+          {
+            //Wr Alarm set/ clr success
+          }        
+        }
+      }
+    }
+  }
+  else
+  {
+    tstr_req = FALSE;
+    stop_timer(&timer_0xF102_resp);   
+  }
+}
+
+
+/***************************************************************************************************/
 void nanoCAN_Menu(int rot_key)
 {
   start_timer(&timer_nanoCANMenudisp);
@@ -283,6 +505,10 @@ void nanoCAN_SubMenu(int rot_key)
       {
         req_time[x] = req_CmnTime[x];
       }
+
+      //WDBI request
+      tstr_req = FALSE;
+      WDBI_0xF101();
     }
     else if(menu_sel == 1)
     {
@@ -290,228 +516,10 @@ void nanoCAN_SubMenu(int rot_key)
       {
         req_alarm[x] = req_CmnTime[x];
       }
+     
+      //WDBI request
+      WDBI_0xF102();
     }
-
-    for(byte x=0; x <3; x++)
-    {
-      Serial.print(req_CmnTime[x]);
-      Serial.print(":");
-    }
-  }
-}
-
-/***************************************************************************************************/
-//RDBI - 0xF101
-void RDBI_0xF101()
-{
-  //Request - CPU time - every 2000 ms
-  start_timer(&timer_0xF101_req);
-  if(((get_timer(&timer_0xF101_req) > 450) ||
-        (retval != MCP2515::ERROR_OK)) &&
-        (tstr_req == FALSE))
-  {
-    tx_canMsg.data[0] = 0x03;         
-    tx_canMsg.data[1] = 0x22;
-    tx_canMsg.data[2] = 0xF1;            
-    tx_canMsg.data[3] = 0x01;
-    tx_canMsg.data[4] = 0x00;
-    tx_canMsg.data[5] = 0x00;
-    tx_canMsg.data[6] = 0x00;
-    tx_canMsg.data[7] = 0x00;
-
-    retval = mcp2515.sendMessage(&tx_canMsg);
-    stop_timer(&timer_0xF101_req);
-    start_timer(&timer_0xF101_resp);
-    tstr_req = TRUE;
-  }
-
-   /****************************************************************************************************/
-  if((tstr_req != FALSE) &&
-    (get_timer(&timer_0xF101_resp) < 100))
-  {
-    if (mcp2515.readMessage(&rx_canMsg) == MCP2515::ERROR_OK)
-    {   
-      if((rx_canMsg.can_id == 0x7E8) &&
-          (rx_canMsg.can_dlc == tx_canMsg.can_dlc))
-      {
-        if(rx_canMsg.data[1] == (tx_canMsg.data[1] + 0x40))
-        {
-          if((rx_canMsg.data[0] == 0x06) &&
-              ((((rx_canMsg.data[2] << 8) & 0xFF00) | 
-                ((rx_canMsg.data[3] << 0) & 0x00FF) ) == 0xF101))
-          {
-            rcd_time[0] = rx_canMsg.data[4];
-            rcd_time[1] = rx_canMsg.data[5];
-            rcd_time[2] = rx_canMsg.data[6];
-          }        
-        }
-      }
-    }
-  }
-  else
-  {
-    tstr_req = FALSE;
-    stop_timer(&timer_0xF101_resp);   
-  }
-}
-
-
-/***************************************************************************************************/
-//WDBI - 0xF101
-void WDBI_0xF101()
-{
-  //Request - CPU time - every 2000 ms
-  start_timer(&timer_0xF101Wr_req);
-  if(((get_timer(&timer_0xF101Wr_req) > 2000) ||
-        (retval != MCP2515::ERROR_OK)) &&
-        (tstr_req == FALSE))
-  {
-    tx_canMsg.data[0] = 0x06;  
-    tx_canMsg.data[1] = 0x2E;       
-    tx_canMsg.data[2] = 0xF1;            
-    tx_canMsg.data[3] = 0x01;
-    tx_canMsg.data[4] = req_time[0];
-    tx_canMsg.data[5] = req_time[1];
-    tx_canMsg.data[6] = req_time[2];
-    tx_canMsg.data[7] = 0x00;
-
-    retval = mcp2515.sendMessage(&tx_canMsg);
-    stop_timer(&timer_0xF101Wr_req);
-    start_timer(&timer_0xF101Wr_resp);
-    tstr_req = TRUE;
-  }
-
-   /****************************************************************************************************/
-  if((tstr_req != FALSE) &&
-    (get_timer(&timer_0xF101Wr_resp) < 100))
-  {
-    if (mcp2515.readMessage(&rx_canMsg) == MCP2515::ERROR_OK)
-    {   
-      if((rx_canMsg.can_id == 0x7E8) &&
-          (rx_canMsg.can_dlc == tx_canMsg.can_dlc))
-      {
-        if(rx_canMsg.data[1] == (tx_canMsg.data[1] + 0x40))
-        {
-          if((rx_canMsg.data[0] == 0x03) &&
-              ((((rx_canMsg.data[2] << 8) & 0xFF00) | 
-                ((rx_canMsg.data[3] << 0) & 0x00FF) ) == 0xF101))
-          {
-            //Wr Time success
-          }        
-        }
-      }
-    }
-  }
-  else
-  {
-    tstr_req = FALSE;
-    stop_timer(&timer_0xF101Wr_resp);   
-  }
-}
-
-/***************************************************************************************************/
-//WDBI - 0xF102
-void WDBI_0xF102()
-{
-  //Request - CPU time - every 2000 ms
-  start_timer(&timer_0xF102_req);
-  if(((get_timer(&timer_0xF102_req) > 2000) ||
-        (retval != MCP2515::ERROR_OK)) &&
-        (tstr_req == FALSE))
-  {
-    tx_canMsg.data[0] = 0x06;   
-    tx_canMsg.data[1] = 0x2E;      
-    tx_canMsg.data[2] = 0xF1;            
-    tx_canMsg.data[3] = 0x02;
-    tx_canMsg.data[4] = req_alarm[0];
-    tx_canMsg.data[5] = req_alarm[1];
-    tx_canMsg.data[6] = req_alarm[2];
-    tx_canMsg.data[7] = 0x00;
-
-    retval = mcp2515.sendMessage(&tx_canMsg);
-    stop_timer(&timer_0xF102_req);
-    start_timer(&timer_0xF102_resp);
-    tstr_req = TRUE;
-  }
-
-   /****************************************************************************************************/
-  if((tstr_req != FALSE) &&
-    (get_timer(&timer_0xF102_resp) < 100))
-  {
-    if (mcp2515.readMessage(&rx_canMsg) == MCP2515::ERROR_OK)
-    {   
-      if((rx_canMsg.can_id == 0x7E8) &&
-          (rx_canMsg.can_dlc == tx_canMsg.can_dlc))
-      {
-        if(rx_canMsg.data[1] == (tx_canMsg.data[1] + 0x40))
-        {
-          if((rx_canMsg.data[0] == 0x03) &&
-              ((((rx_canMsg.data[2] << 8) & 0xFF00) | 
-                ((rx_canMsg.data[3] << 0) & 0x00FF) ) == 0xF102))
-          {
-            //Wr Alarm success
-          }        
-        }
-      }
-    }
-  }
-  else
-  {
-    tstr_req = FALSE;
-    stop_timer(&timer_0xF102_resp);   
-  }
-}
-
-/***************************************************************************************************/
-//WDBI - 0xF103
-void WDBI_0xF103()
-{
-  //Request - CPU time - every 2000 ms
-  start_timer(&timer_0xF103_req);
-  if(((get_timer(&timer_0xF103_req) > 2000) ||
-        (retval != MCP2515::ERROR_OK)) &&
-        (tstr_req == FALSE))
-  {
-    tx_canMsg.data[0] = 0x04;  
-    tx_canMsg.data[1] = 0x2E;       
-    tx_canMsg.data[2] = 0xF1;            
-    tx_canMsg.data[3] = 0x03;
-    tx_canMsg.data[4] = alarm_st;
-    tx_canMsg.data[5] = 0x00;
-    tx_canMsg.data[6] = 0x00;
-    tx_canMsg.data[7] = 0x00;
-
-    retval = mcp2515.sendMessage(&tx_canMsg);
-    stop_timer(&timer_0xF103_req);
-    start_timer(&timer_0xF103_resp);
-    tstr_req = TRUE;
-  }
-
-   /****************************************************************************************************/
-  if((tstr_req != FALSE) &&
-    (get_timer(&timer_0xF103_resp) < 100))
-  {
-    if (mcp2515.readMessage(&rx_canMsg) == MCP2515::ERROR_OK)
-    {   
-      if((rx_canMsg.can_id == 0x7E8) &&
-          (rx_canMsg.can_dlc == tx_canMsg.can_dlc))
-      {
-        if(rx_canMsg.data[1] == (tx_canMsg.data[1] + 0x40))
-        {
-          if((rx_canMsg.data[0] == 0x03) &&
-              ((((rx_canMsg.data[2] << 8) & 0xFF00) | 
-                ((rx_canMsg.data[3] << 0) & 0x00FF) ) == 0xF103))
-          {
-            //Wr Alarm set/ clr success
-          }        
-        }
-      }
-    }
-  }
-  else
-  {
-    tstr_req = FALSE;
-    stop_timer(&timer_0xF102_resp);   
   }
 }
 
@@ -597,8 +605,6 @@ void loop()
   RDBI_0xF101();
 
   //WDBI request
-  WDBI_0xF101();
-  WDBI_0xF102();
   WDBI_0xF103();
 /****************************************************************************************************/
 }
