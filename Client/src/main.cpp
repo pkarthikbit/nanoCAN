@@ -9,11 +9,7 @@ String disp_menu[NANOCAN_MENUCOUNT] =
   "Wr Alarm",
   "Set Alarm",
   "Clr Alarm",
-  "Menu_04",
-  "Menu_05",
-  "Menu_06",
-  "Menu_07",
-  "Menu_08",
+  "Greetings",
   "<-Exit"
 };
 
@@ -237,7 +233,7 @@ void WDBI_0xF102()
   //Request - CPU time - every 2000 ms
   start_timer(&timer_0xF102_req);
 
-  if(((get_timer(&timer_0xF102_req) > 0) ||
+  if(((get_timer(&timer_0xF102_req) >= 0) ||
         (retval != MCP2515::ERROR_OK)) &&
         (tstr_req == FALSE))
   {
@@ -290,7 +286,7 @@ void WDBI_0xF103()
 {
   //Request - CPU time - every 2000 ms
   start_timer(&timer_0xF103_req);
-  if(((get_timer(&timer_0xF103_req) > 2000) ||
+  if(((get_timer(&timer_0xF103_req) >= 0) ||
         (retval != MCP2515::ERROR_OK)) &&
         (tstr_req == FALSE))
   {
@@ -324,7 +320,7 @@ void WDBI_0xF103()
               ((((rx_canMsg.data[2] << 8) & 0xFF00) | 
                 ((rx_canMsg.data[3] << 0) & 0x00FF) ) == 0xF103))
           {
-            //Wr Alarm set/ clr success
+            //Wr Alarm set/ clr success. this case is not checked and assumed to be success
           }        
         }
       }
@@ -414,18 +410,31 @@ void nanoCAN_Menu(int rot_key)
         }
       }
 
-      display.setTextSize(1);
-      display.setCursor(30, 25);
-      display.setTextColor(BLACK, WHITE);
       if(alarm_st)
       {
+        display.setTextSize(1);
+        display.setTextColor(BLACK, WHITE);
+        display.setCursor(00, 15);
         display.print("Alarm On");
       }
       else
       {
+        display.setTextSize(1);
+        display.setCursor(00, 15);
+        display.setTextColor(BLACK, WHITE);
         display.print("Alarm Off");
       }
       
+      for(byte x=0; x < 3; x++)
+      {
+        display.setCursor((0 + (25 * x)), 25);
+        display.setTextColor(WHITE);
+        display.print(req_alarm[x]);
+        if(x != 2)
+        {
+          display.print(":");
+        }
+      }
       display.display();
       stop_timer(&timer_mainclk);
     }
@@ -587,11 +596,20 @@ void loop()
     else if(menu_sel == 2)
     {
       alarm_st = true;
+      tstr_req = FALSE;
+      //WDBI request
+      WDBI_0xF103();
+
       submenu_sel = -1;
     }
-    else if(menu_sel == 3)
+    else if((menu_sel == 3) ||
+             (menu_sel == (NANOCAN_MENUCOUNT - 1)))
     {
       alarm_st = false;
+      tstr_req = FALSE;
+      //WDBI request
+      WDBI_0xF103();
+      
       submenu_sel = -1;
     }
     else
@@ -605,8 +623,5 @@ void loop()
 
   //RDBI request
   RDBI_0xF101();
-
-  //WDBI request
-  WDBI_0xF103();
 /****************************************************************************************************/
 }
