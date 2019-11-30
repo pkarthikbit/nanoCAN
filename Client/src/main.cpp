@@ -213,17 +213,8 @@ void nanoCAN_Menu(int rot_key)
 /***************************************************************************************************/
 void nanoCAN_SubMenu(int rot_key)
 { 
-  start_timer(&timer_nanoCANSubMenudisp);
-  
-  if((submenuopt_bypass != false) ||
-    ((rot_key != 0) && 
-     (get_timer(&timer_nanoCANSubMenudisp) > 500)))
+  if(submenu_sel < 3)
   {
-    if(submenuopt_bypass != false)
-    {
-      submenuopt_bypass = false;
-    }
-
     display.clearDisplay();
     display.setTextSize(1);
     display.setCursor(0, 0);
@@ -239,7 +230,7 @@ void nanoCAN_SubMenu(int rot_key)
       display.setTextColor(WHITE);
       display.println(req_CmnTime[x]);
     }
-    
+
     byte i, j, k;
     submenuopt_sel = submenuopt_sel + rot_key;
 
@@ -282,8 +273,31 @@ void nanoCAN_SubMenu(int rot_key)
 
     submenuopt_sel = j;
     req_CmnTime[submenu_sel] = disp_submenu[submenuopt_sel];
+  }
+  else //(submenu_sel >= 3)
+  {
+    submenu_sel = -1;
 
-    stop_timer(&timer_nanoCANSubMenudisp);
+    if(menu_sel == 0)
+    {
+      for(byte x=0; x <3; x++)
+      {
+        req_time[x] = req_CmnTime[x];
+      }
+    }
+    else if(menu_sel == 1)
+    {
+      for(byte x=0; x <3; x++)
+      {
+        req_alarm[x] = req_CmnTime[x];
+      }
+    }
+
+    for(byte x=0; x <3; x++)
+    {
+      Serial.print(req_CmnTime[x]);
+      Serial.print(":");
+    }
   }
 }
 
@@ -554,13 +568,11 @@ void loop()
     submenu_sel++;
   } 
 
-  if((submenu_sel >= 0) &&
-     (submenu_sel < 3))
+  if(submenu_sel >= 0)
   {
     if((menu_sel == 0) ||
         (menu_sel == 1))
     {
-      submenuopt_bypass = true;
       nanoCAN_SubMenu(nanoCAN_rotarySwt());
     }
     else if(menu_sel == 2)
@@ -576,31 +588,6 @@ void loop()
     else
     {
       submenu_sel = -1;
-    }
-  }
-  else //(submenu_sel >= 3)
-  {
-    submenu_sel = -1;
-
-    if(menu_sel == 0)
-    {
-      for(byte x=0; x <3; x++)
-      {
-        req_time[x] = req_CmnTime[x];
-      }
-    }
-    else if(menu_sel == 1)
-    {
-      for(byte x=0; x <3; x++)
-      {
-        req_alarm[x] = req_CmnTime[x];
-      }
-    }
-
-    for(byte x=0; x <3; x++)
-    {
-      Serial.print(req_CmnTime[x]);
-      Serial.print(":");
     }
   }
 
