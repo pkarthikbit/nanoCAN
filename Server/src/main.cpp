@@ -19,29 +19,15 @@ tmElements_t myTime;
 /****************************************************************************************************/
 
 void RDBI_0xF101(struct can_frame *fill_canMsg)
-{
-  unsigned long tmr_0xF101 = (millis()/1000);
-                 
-  fill_canMsg->data[0] = 0x07;
-      
-  fill_canMsg->data[4] = ((tmr_0xF101 & 0xFF000000) >> 24);
-  fill_canMsg->data[5] = ((tmr_0xF101 & 0x00FF0000) >> 16);
-  fill_canMsg->data[6] = ((tmr_0xF101 & 0x0000FF00) >> 8);
-  fill_canMsg->data[7] = ((tmr_0xF101 & 0x000000FF) >> 0);
+{             
+  fill_canMsg->data[0] = 0x06;
 
   RTC.read(myTime);
-
-  Serial.print(myTime.Hour, DEC);
-  Serial.print(':');
-  Serial.print(myTime.Minute,DEC);
-  Serial.print(':');
-  Serial.print(myTime.Second,DEC);
-  Serial.print('-');
-  Serial.print(myTime.Day,DEC);
-  Serial.print('/');
-  Serial.print(myTime.Month,DEC);
-  Serial.print('/');
-  Serial.println(1970 + (myTime.Year,DEC));
+      
+  fill_canMsg->data[4] = myTime.Hour;
+  fill_canMsg->data[5] = myTime.Minute;
+  fill_canMsg->data[6] = myTime.Second;
+  fill_canMsg->data[7] = 0;
 }
 
 void setup() {
@@ -106,21 +92,16 @@ void loop() {
             tx_canMsg.data[2] = rx_canMsg.data[2];   
             tx_canMsg.data[3] = rx_canMsg.data[3]; 
             RDBI_0xF101(&tx_canMsg);
-        }        
-      }
-    }
-
-    retval = mcp2515.sendMessage(&tx_canMsg);
+        }     
+        
+        retval = mcp2515.sendMessage(&tx_canMsg);
   
-    if(retval == MCP2515::ERROR_OK)
-    {
-          display.clearDisplay();
-          display.setCursor(0, 20);
-          display.println(((tx_canMsg.data[4] << 24) & 0xFF000000) | 
-                          ((tx_canMsg.data[5] << 16) & 0x00FF0000) | 
-                          ((tx_canMsg.data[6] << 8)  & 0x0000FF00) | 
-                          ((tx_canMsg.data[7] << 0)  & 0x000000FF));
-          display.display();
+        if(retval == MCP2515::ERROR_OK)
+        {
+          Serial.println("Time reply success");
+        }   
+      }
+    
     }
   }
 }

@@ -177,7 +177,8 @@ void nanoCAN_Menu(int rot_key)
         (menu_sel == NANOCAN_MENUCOUNT -1))
     {
       display.clearDisplay();
-      display.setTextSize(3);
+
+      display.setTextSize(2.5);
 
       for(byte x=0; x < 3; x++)
       {
@@ -202,12 +203,10 @@ void nanoCAN_Menu(int rot_key)
         display.print("Alarm Off");
       }
       
-
       display.display();
       stop_timer(&timer_mainclk);
     }
   }
-  
 }
 
 /***************************************************************************************************/
@@ -307,7 +306,7 @@ void RDBI_0xF101()
 {
   //Request - CPU time - every 2000 ms
   start_timer(&timer_0xF101_req);
-  if(((get_timer(&timer_0xF101_req) > 2000) ||
+  if(((get_timer(&timer_0xF101_req) > 450) ||
         (retval != MCP2515::ERROR_OK)) &&
         (tstr_req == FALSE))
   {
