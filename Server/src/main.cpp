@@ -16,6 +16,8 @@ byte retval;
 DS1302RTC RTC(7, 8, 9);
 
 tmElements_t myTime, newTime, alarm_t;
+bool alarm_st, alarmOn_st;
+timer_struct timer_alarm;
 /****************************************************************************************************/
 
 void RDBI_0xF101(struct can_frame *fill_canMsg)
@@ -46,10 +48,15 @@ void WDBI_0xF102(struct can_frame *fill_canMsg)
   alarm_t.Second = fill_canMsg->data[6];
 }
 
+void WDBI_0xF103(struct can_frame *fill_canMsg)
+{             
+  alarm_st = fill_canMsg->data[4];
+}
+
 void setup() {
   /* Pin 01 - Red light - Low On */
   /* Pin 13 - build in LED - High On */
-  pinMode(13, OUTPUT);
+  pinMode(01, OUTPUT);
   /****************************************************************************************************/
   Serial.begin(9600);
 
@@ -78,7 +85,7 @@ void setup() {
 }
 
 void loop() {
- display.setCursor(0, 0);
+  display.setCursor(0, 0);
   display.println("Server"); 
   display.display();
   
@@ -157,7 +164,57 @@ void loop() {
             Serial.println("Alarm got success");
           } 
         }       
+        else if(((((rx_canMsg.data[2] << 8) & 0xFF00) | 
+            ((rx_canMsg.data[3] << 0) & 0x00FF) ) == 0xF103) &&
+            (rx_canMsg.data[0] == 0x04))
+        {
+          tx_canMsg.data[0] = 0x03;
+          tx_canMsg.data[2] = rx_canMsg.data[2];   
+          tx_canMsg.data[3] = rx_canMsg.data[3]; 
+          
+          WDBI_0xF103(&rx_canMsg);
+
+          retval = mcp2515.sendMessage(&tx_canMsg);
+
+          if(retval == MCP2515::ERROR_OK)
+          {
+            Serial.println("Alarm set/clr success");
+          } 
+        }       
       }
     }
+  }
+
+  if(alarm_st)
+  {
+    RTC.read(myTime);
+
+    if(((alarm_t.Hour == myTime.Hour) &&
+        (alarm_t.Minute == myTime.Minute) &&
+          (myTime.Second > alarm_t.Second)) ||
+          (alarmOn_st))
+    {
+      alarmOn_st = true;
+      start_timer(&timer_alarm);
+      
+      if(get_timer(&timer_alarm) <= 1000)
+      {
+        digitalWrite(1, LOW);   // turn the LED on (HIGH is the voltage level)
+      }
+      else if((get_timer(&timer_alarm) > 1000) &&
+         (get_timer(&timer_alarm) < 2000))
+      {
+        digitalWrite(1, HIGH); 
+      }
+      else
+      {
+        stop_timer(&timer_alarm);
+      }
+    }
+  }
+  else
+  {
+    alarmOn_st = false;
+    stop_timer(&timer_alarm);
   }
 }
