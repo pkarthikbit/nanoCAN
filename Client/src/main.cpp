@@ -233,7 +233,7 @@ void WDBI_0xF102()
   //Request - CPU time - every 2000 ms
   start_timer(&timer_0xF102_req);
 
-  if(((get_timer(&timer_0xF102_req) >= 0) ||
+  if(((get_timer(&timer_0xF102_req) >= 60000) ||
         (retval != MCP2515::ERROR_OK)) &&
         (tstr_req == FALSE))
   {
@@ -286,7 +286,7 @@ void WDBI_0xF103()
 {
   //Request - CPU time - every 2000 ms
   start_timer(&timer_0xF103_req);
-  if(((get_timer(&timer_0xF103_req) >= 0) ||
+  if(((get_timer(&timer_0xF103_req) >= 1100) ||
         (retval != MCP2515::ERROR_OK)) &&
         (tstr_req == FALSE))
   {
@@ -526,10 +526,6 @@ void nanoCAN_SubMenu(int rot_key)
       {
         req_alarm[x] = req_CmnTime[x];
       }
-     
-      //WDBI request
-      tstr_req = FALSE;
-      WDBI_0xF102();
     }
   }
 }
@@ -649,20 +645,12 @@ void loop()
     else if(menu_sel == 2)
     {
       alarm_st = true;
-      tstr_req = FALSE;
-      //WDBI request
-      WDBI_0xF103();
-
       submenu_sel = -1;
     }
     else if((menu_sel == 3) ||
              (menu_sel == (NANOCAN_MENUCOUNT - 1)))
     {
-      alarm_st = false;
-      tstr_req = FALSE;
-      //WDBI request
-      WDBI_0xF103();
-      
+      alarm_st = false;      
       submenu_sel = -1;
     }
     else if(menu_sel == 4)
@@ -680,5 +668,10 @@ void loop()
 
   //RDBI request
   RDBI_0xF101();
+
+  //WDBI alarm request
+  WDBI_0xF102();
+  WDBI_0xF103();
+
 /****************************************************************************************************/
 }
