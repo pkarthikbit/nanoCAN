@@ -185,10 +185,10 @@ void loop() {
     }
   }
 
+  RTC.read(myTime);
+
   if(alarm_st)
   {
-    RTC.read(myTime);
-
     if(((alarm_t.Hour == myTime.Hour) &&
         (alarm_t.Minute == myTime.Minute) &&
           (myTime.Second > alarm_t.Second)) ||
@@ -216,5 +216,17 @@ void loop() {
   {
     alarmOn_st = false;
     stop_timer(&timer_alarm);
+  }
+
+/****************************************************************************************************/
+  if((myTime.Hour >= 22) ||
+      ((myTime.Hour >= 0) && (myTime.Hour <= 6))
+    )
+  {
+    mcp2515.setSleepMode(); 
+  }
+  else
+  {
+    mcp2515.setNormalMode();
   }
 }
