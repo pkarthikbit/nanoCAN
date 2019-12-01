@@ -219,14 +219,14 @@ void loop() {
   }
 
 /****************************************************************************************************/
-  if((myTime.Hour >= 22) ||
-      ((myTime.Hour >= 0) && (myTime.Hour <= ((alarm_t.Hour < 6)?alarm_t.Hour:6)))
-    )
-  {
-    mcp2515.setSleepMode(); 
-  }
-  else
-  {
-    mcp2515.setNormalMode();
-  }
+  // if((myTime.Hour >= 22) ||
+  //     ((myTime.Hour >= 0) && (myTime.Hour <= ((alarm_t.Hour < 6)?alarm_t.Hour:6)))
+  //   )
+  // {
+  //   mcp2515.setSleepMode(); 
+  // }
+  // else
+  // {
+  //   mcp2515.setNormalMode();
+  // }
 }
