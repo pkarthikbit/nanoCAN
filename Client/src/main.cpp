@@ -163,6 +163,10 @@ void RDBI_0xF101()
   {
     tstr_req = FALSE;
     stop_timer(&timer_0xF101_resp);   
+
+    //Powersaving mode
+    mcp2515.setSleepMode(); 
+    display.ssd1306_command(SSD1306_DISPLAYOFF);
   }
 }
 
@@ -627,11 +631,15 @@ void loop()
 { 
   if(submenu_sel == -1)
   {
+    mcp2515.setNormalMode();
+    display.ssd1306_command(SSD1306_DISPLAYON);
     nanoCAN_Menu(nanoCAN_rotarySwt());
   }
 /****************************************************************************************************/  
   if(nanoCAN_pressSwt())
   {
+    mcp2515.setNormalMode();
+    display.ssd1306_command(SSD1306_DISPLAYON);
     submenu_sel++;
   } 
 
