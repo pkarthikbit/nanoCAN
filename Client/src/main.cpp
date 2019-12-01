@@ -162,11 +162,15 @@ void RDBI_0xF101()
   else
   {
     tstr_req = FALSE;
-    stop_timer(&timer_0xF101_resp);   
 
-    //Powersaving mode
-    mcp2515.setSleepMode(); 
-    display.ssd1306_command(SSD1306_DISPLAYOFF);
+    if(get_timer(&timer_0xF101_resp) > 5000)
+    {
+      stop_timer(&timer_0xF101_resp);   
+
+      //Powersaving mode
+      mcp2515.setSleepMode(); 
+      display.ssd1306_command(SSD1306_DISPLAYOFF);
+    }
   }
 }
 
@@ -346,6 +350,9 @@ void nanoCAN_Menu(int rot_key)
   if((rot_key != 0) && 
      (get_timer(&timer_nanoCANMenudisp) > 500))
   {
+    mcp2515.setNormalMode();
+    display.ssd1306_command(SSD1306_DISPLAYON);
+
     byte i, j, k;
     menu_sel = menu_sel + rot_key;
 
@@ -631,8 +638,6 @@ void loop()
 { 
   if(submenu_sel == -1)
   {
-    mcp2515.setNormalMode();
-    display.ssd1306_command(SSD1306_DISPLAYON);
     nanoCAN_Menu(nanoCAN_rotarySwt());
   }
 /****************************************************************************************************/  
