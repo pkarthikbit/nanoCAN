@@ -9,6 +9,7 @@
 #define TRUE !FALSE
 /****************************************************************************************************/
 #define NANOCAN_MENUCOUNT 6
+#define NANOCAN_GREETINGMENUCNT 10
 /****************************************************************************************************/
 // Declaration for OLED
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
@@ -53,6 +54,19 @@ const unsigned char myBitmap [] PROGMEM = {
   0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 
   0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 
   0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff
+};
+/****************************************************************************************************/
+String disp_greetingmenu[NANOCAN_GREETINGMENUCNT] = {
+"x: ",
+"x1: ",
+"x2: ",
+"x3: ",
+"x4: ",
+"x5: ",
+"x6: ",
+"x7: ",
+"x8: ",
+"x9: "
 };
 /****************************************************************************************************/
 

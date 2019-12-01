@@ -9,14 +9,14 @@ String disp_menu[NANOCAN_MENUCOUNT] =
   "Wr Alarm",
   "Set Alarm",
   "Clr Alarm",
-  "Greetings",
+  "Greeting",
   "<-Exit"
 };
 
 byte disp_submenu[60], req_CmnTime[3], req_time[3], req_alarm[3], rcd_time[3]= {11, 12, 13};
 byte NANOCAN_SUBMENUDGTCNT[3] = {24, 60, 60};
 
-int menu_sel = -1, submenu_sel = -1, submenuopt_sel = 1;
+int menu_sel = -1, submenu_sel = -1, submenuopt_sel = 1, greetingmenuopt_sel = 1;
 bool submenuopt_bypass = false, alarm_st = false;
 char clk_HHMMSS[3];
 
@@ -534,6 +534,59 @@ void nanoCAN_SubMenu(int rot_key)
   }
 }
 
+/***************************************************************************************************/
+void nanoCAN_GreetingMenu(int rot_key)
+{ 
+  if(submenu_sel == 0)
+  {
+    display.clearDisplay();
+  
+    byte i, j, k;
+    greetingmenuopt_sel = greetingmenuopt_sel + rot_key;
+
+    if((greetingmenuopt_sel > 0) && 
+        (greetingmenuopt_sel < (NANOCAN_GREETINGMENUCNT - 1)))
+    {
+      i = greetingmenuopt_sel - 1;
+      j = greetingmenuopt_sel;
+      k = greetingmenuopt_sel + 1;
+    }
+    else if((greetingmenuopt_sel == 0) ||
+            (greetingmenuopt_sel > (NANOCAN_GREETINGMENUCNT - 1)))
+    {
+      greetingmenuopt_sel = 0;
+      
+      i = NANOCAN_GREETINGMENUCNT - 1;
+      j = greetingmenuopt_sel; 
+      k = greetingmenuopt_sel + 1;
+    }
+    else if((greetingmenuopt_sel < 0) ||
+            (greetingmenuopt_sel == (NANOCAN_GREETINGMENUCNT - 1)))
+    {
+      greetingmenuopt_sel = NANOCAN_GREETINGMENUCNT - 1;
+
+      i = greetingmenuopt_sel - 1;
+      j = greetingmenuopt_sel; 
+      k = 0;
+    }
+
+    display.setCursor(0, 0);
+    display.setTextColor(WHITE);
+    display.println(disp_greetingmenu[i]);
+    display.setCursor(0, 10);
+    display.setTextColor(BLACK, WHITE);
+    display.println(disp_greetingmenu[j]);
+    display.setCursor(0, 20);
+    display.setTextColor(WHITE);
+    display.println(disp_greetingmenu[k]);
+    display.display();
+  }
+  else //(submenu_sel > 1)
+  {
+    submenu_sel = -1;
+  }
+}
+
 void setup() 
 {
   /* Pin 01 - Red light - Low On */
@@ -611,6 +664,10 @@ void loop()
       WDBI_0xF103();
       
       submenu_sel = -1;
+    }
+    else if(menu_sel == 4)
+    {
+      nanoCAN_GreetingMenu(nanoCAN_rotarySwt());
     }
     else
     {
