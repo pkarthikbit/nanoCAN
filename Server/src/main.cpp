@@ -223,10 +223,30 @@ void loop() {
       ((myTime.Hour >= 0) && (myTime.Hour <= ((alarm_t.Hour < 6)?alarm_t.Hour:6)))
     )
   {
-    mcp2515.setSleepMode(); 
+    tx_canMsg.can_id  = 0x111;
+    tx_canMsg.can_dlc = 0x2; 
+    tx_canMsg.data[0] = 0x01;
+    tx_canMsg.data[1] = 0xFF;
+
+    retval = mcp2515.sendMessage(&tx_canMsg);
+
+    if(retval == MCP2515::ERROR_OK)
+    {
+      mcp2515.setSleepMode(); 
+    } 
   }
   else
   {
-    mcp2515.setNormalMode();
+    tx_canMsg.can_id  = 0x111;
+    tx_canMsg.can_dlc = 0x2; 
+    tx_canMsg.data[0] = 0x01;
+    tx_canMsg.data[1] = 0x00;
+
+    retval = mcp2515.sendMessage(&tx_canMsg);
+
+    if(retval == MCP2515::ERROR_OK)
+    {
+      mcp2515.setNormalMode();
+    } 
   }
 }
